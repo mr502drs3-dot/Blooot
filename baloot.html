@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>بلوت</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#f7f7f5;--sur:#fff;--brd:#e8e8e4;--txt:#1a1a1a;--sub:#999;--red:#c0392b;--grn:#27ae60;}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--txt);}
+.screen{display:none;position:fixed;inset:0;flex-direction:column;background:var(--bg);}
+.screen.active{display:flex;}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;flex-shrink:0;}
+.topbar-title{font-size:1rem;font-weight:900;letter-spacing:2px;}
+.topbar-btn{background:none;border:1px solid var(--brd);border-radius:8px;font-family:'Tajawal',sans-serif;font-size:.75rem;color:var(--sub);cursor:pointer;padding:5px 10px;}
+/* SCORE BAR */
+.score-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 8px;flex-shrink:0;}
+.score-side{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.score-lbl{font-size:.68rem;color:var(--sub);font-weight:700;letter-spacing:1px;margin-bottom:2px;}
+.score-num{font-size:2rem;font-weight:900;line-height:1;}
+.score-num.red{color:var(--red);}
+.snd-btn{background:none;border:1px solid var(--brd);border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;color:var(--sub);}
+/* INPUT */
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 6px;flex-shrink:0;}
+.inp-box{background:var(--sur);border:1.5px solid var(--brd);border-radius:10px;padding:9px 12px;cursor:pointer;transition:border-color .15s;}
+.inp-box.focused{border-color:var(--txt);}
+.inp-lbl{font-size:.65rem;color:var(--sub);font-weight:700;letter-spacing:1px;margin-bottom:2px;}
+.inp-val{font-size:1.4rem;font-weight:900;display:flex;align-items:center;min-height:1.7rem;}
+.inp-val.red{color:var(--red);}
+.cursor{display:inline-block;width:2px;height:1.1rem;background:var(--txt);margin-right:2px;animation:blink .7s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+/* NUMPAD */
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:0 16px 6px;flex-shrink:0;}
+.nk{background:var(--sur);border:1px solid var(--brd);border-radius:10px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Tajawal',sans-serif;font-size:1.1rem;font-weight:700;cursor:pointer;user-select:none;}
+.nk:active{background:var(--brd);}
+.nk.wide{grid-column:span 2;}
+.nk.del{color:var(--sub);font-size:.9rem;}
+/* ACTIONS */
+.act-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 16px 8px;flex-shrink:0;}
+.act-btn{height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-family:'Tajawal',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;letter-spacing:.5px;}
+.act-btn:active{opacity:.85;}
+.act-primary{background:var(--txt);color:var(--bg);border:none;}
+.act-secondary{background:none;color:var(--sub);border:1px solid var(--brd);}
+/* HISTORY */
+.hist-section{flex:1;overflow-y:auto;padding:0 16px 6px;}
+.hist-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.hist-lbl{font-size:.65rem;color:var(--sub);font-weight:700;letter-spacing:1.5px;}
+.new-game-btn{background:none;border:1px solid var(--brd);border-radius:6px;font-family:'Tajawal',sans-serif;font-size:.7rem;color:var(--sub);cursor:pointer;padding:4px 8px;}
+.hi{display:flex;justify-content:space-between;align-items:center;background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:7px 12px;margin-bottom:4px;}
+.hi-num{font-size:.63rem;color:var(--sub);margin-bottom:1px;}
+.hi-scores{display:flex;gap:8px;font-weight:700;font-size:.8rem;}
+.hi-na{color:var(--txt);}
+.hi-hm{color:var(--red);}
+.hi-del{background:none;border:none;color:var(--brd);cursor:pointer;font-size:.8rem;padding:2px 5px;}
+.hi-del:active{color:var(--red);}
+.empty{text-align:center;color:var(--sub);font-size:.78rem;padding:18px;opacity:.5;}
+/* BOTTOM NAV */
+.bnav-bar{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--brd);background:var(--sur);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+.bnav{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px;background:none;border:none;font-family:'Tajawal',sans-serif;font-size:.62rem;color:var(--sub);cursor:pointer;gap:2px;}
+.bnav.on{color:var(--txt);font-weight:700;}
+.bnav-ic{font-size:1.1rem;line-height:1;}
+/* ABNAT */
+.ab-scroll{flex:1;overflow-y:auto;padding:0 16px 10px;}
+.sec-lbl{font-size:.63rem;font-weight:700;color:var(--sub);letter-spacing:1.5px;margin:10px 0 5px;}
+.sec-lbl:first-child{margin-top:0;}
+.tog-row{display:flex;gap:5px;margin-bottom:2px;}
+.tbtn{flex:1;padding:9px 4px;background:var(--sur);border:1.5px solid var(--brd);border-radius:8px;font-family:'Tajawal',sans-serif;font-size:.8rem;font-weight:600;color:var(--sub);cursor:pointer;transition:all .15s;}
+.tbtn.on{background:var(--txt);color:var(--bg);border-color:var(--txt);}
+.tbtn:active{opacity:.8;}
+.ab-inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.ab-box{background:var(--sur);border:1.5px solid var(--brd);border-radius:10px;padding:9px 12px;cursor:pointer;transition:border-color .15s;}
+.ab-box.focused{border-color:var(--txt);}
+.ab-box-lbl{font-size:.63rem;color:var(--sub);font-weight:700;letter-spacing:1px;margin-bottom:2px;}
+.ab-box-val{font-size:1.3rem;font-weight:900;display:flex;align-items:center;min-height:1.5rem;}
+.ab-box-val.red{color:var(--red);}
+.ab-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;}
+.ank{background:var(--sur);border:1px solid var(--brd);border-radius:8px;height:38px;display:flex;align-items:center;justify-content:center;font-family:'Tajawal',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;user-select:none;}
+.ank:active{background:var(--brd);}
+.ank.wide{grid-column:span 2;}
+.ank.del{color:var(--sub);}
+.info-tiny{font-size:.67rem;color:var(--sub);text-align:center;margin-bottom:5px;}
+.mash-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px;}
+.mi{display:flex;align-items:center;justify-content:space-between;background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:6px 8px;font-size:.73rem;}
+.mi-name{color:var(--txt);font-weight:700;flex:1;}
+.mi-side{font-size:.57rem;color:var(--sub);margin-left:2px;}
+.ctrs{display:flex;align-items:center;gap:2px;}
+.cbtn{width:22px;height:22px;border-radius:5px;border:1px solid var(--brd);background:var(--bg);color:var(--txt);font-size:.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Tajawal',sans-serif;font-weight:700;}
+.cbtn:active{background:var(--brd);}
+.cval{width:15px;text-align:center;font-size:.8rem;font-weight:700;}
+/* RESULT BOX */
+.res-box{background:var(--sur);border:1px solid var(--brd);border-radius:10px;padding:11px;margin-bottom:7px;}
+.res-scores{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px;}
+.res-s{text-align:center;}
+.res-l{font-size:.62rem;color:var(--sub);letter-spacing:1px;margin-bottom:2px;}
+.res-v{font-size:1.5rem;font-weight:900;}
+.res-v.red{color:var(--red);}
+.res-status{text-align:center;padding:6px;border-radius:7px;font-size:.76rem;font-weight:700;background:var(--bg);color:var(--sub);}
+.res-status.naj{background:#e8f5e9;color:var(--grn);}
+.res-status.khs{background:#fdecea;color:var(--red);}
+.ab-add{width:100%;height:42px;background:var(--txt);color:var(--bg);border:none;border-radius:10px;font-family:'Tajawal',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:5px;}
+.ab-add:active{opacity:.85;}
+.ab-rst{width:100%;height:38px;background:none;color:var(--sub);border:1px solid var(--brd);border-radius:10px;font-family:'Tajawal',sans-serif;font-size:.78rem;cursor:pointer;}
+.ab-rst:active{color:var(--red);border-color:var(--red);}
+/* DAG */
+.dag-scroll{flex:1;overflow-y:auto;padding:0 16px 10px;display:flex;flex-direction:column;gap:9px;}
+.name-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.name-inp{width:100%;padding:10px 12px;background:var(--sur);border:1.5px solid var(--brd);border-radius:10px;font-family:'Tajawal',sans-serif;font-size:.9rem;font-weight:700;color:var(--txt);text-align:center;outline:none;}
+.name-inp:focus{border-color:var(--txt);}
+.name-inp::placeholder{color:var(--brd);font-weight:400;}
+.dag-btn{width:100%;height:44px;background:var(--txt);color:var(--bg);border:none;border-radius:10px;font-family:'Tajawal',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;letter-spacing:1px;}
+.dag-btn:active{opacity:.85;}
+.teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.team-box{background:var(--sur);border:1px solid var(--brd);border-radius:10px;overflow:hidden;animation:pop .3s cubic-bezier(.34,1.56,.64,1);}
+.team-box:nth-child(2){animation-delay:.07s;}
+@keyframes pop{from{transform:scale(.9);opacity:0;}to{transform:scale(1);opacity:1;}}
+.team-hdr{padding:8px 12px;font-size:.7rem;font-weight:900;letter-spacing:2px;}
+.team-hdr.t1{background:var(--txt);color:var(--bg);}
+.team-hdr.t2{background:var(--red);color:#fff;}
+.team-members{padding:8px 12px;}
+.member{padding:5px 0;font-weight:700;font-size:.83rem;border-bottom:1px solid var(--brd);}
+.member:last-child{border:none;}
+/* WIN */
+.win-ov{display:none;position:fixed;inset:0;background:rgba(247,247,245,.97);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.win-ov.show{display:flex;}
+.win-box{background:var(--sur);border:2px solid var(--txt);border-radius:16px;padding:26px 34px;text-align:center;}
+.win-emoji{font-size:2.5rem;margin-bottom:8px;}
+.win-txt{font-size:1.4rem;font-weight:900;margin-bottom:4px;}
+.win-sub{font-size:.8rem;color:var(--sub);}
+.win-btn{padding:12px 40px;background:var(--txt);color:var(--bg);border:none;border-radius:10px;font-family:'Tajawal',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;}
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: MAIN -->
+<div class="screen active" id="scr-main">
+  <div class="topbar">
+    <span class="topbar-title">♠ بلوت</span>
+    <button class="snd-btn" onclick="speakScore()">🔊</button>
+  </div>
+  <div class="score-bar">
+    <div class="score-side">
+      <div><div class="score-lbl">نحن</div><div class="score-num" id="s-total-na">0</div></div>
+    </div>
+    <div class="score-side" style="flex-direction:row-reverse;">
+      <div style="text-align:left;"><div class="score-lbl">هم</div><div class="score-num red" id="s-total-hm">0</div></div>
+    </div>
+  </div>
+  <div class="inp-row">
+    <div class="inp-box focused" id="sf-na" onclick="sSetFocus('na')">
+      <div class="inp-lbl">نحن</div>
+      <div class="inp-val" id="sfv-na"><span class="cursor"></span></div>
+    </div>
+    <div class="inp-box" id="sf-hm" onclick="sSetFocus('hm')">
+      <div class="inp-lbl">هم</div>
+      <div class="inp-val red" id="sfv-hm"><span style="color:var(--brd)">-</span></div>
+    </div>
+  </div>
+  <div class="numpad">
+    <div class="nk" onclick="sKey('1')">1</div><div class="nk" onclick="sKey('2')">2</div><div class="nk" onclick="sKey('3')">3</div>
+    <div class="nk" onclick="sKey('4')">4</div><div class="nk" onclick="sKey('5')">5</div><div class="nk" onclick="sKey('6')">6</div>
+    <div class="nk" onclick="sKey('7')">7</div><div class="nk" onclick="sKey('8')">8</div><div class="nk" onclick="sKey('9')">9</div>
+    <div class="nk wide" onclick="sKey('0')">0</div><div class="nk del" onclick="sKey('⌫')">⌫</div>
+  </div>
+  <div class="act-row">
+    <button class="act-btn act-primary" onclick="sAddRound()">✓ إضافة</button>
+    <button class="act-btn act-secondary" onclick="sClear()">مسح</button>
+  </div>
+  <div class="hist-section">
+    <div class="hist-hdr">
+      <span class="hist-lbl">السجل</span>
+      <button class="new-game-btn" onclick="sResetAll()">لعبة جديدة</button>
+    </div>
+    <div id="s-history"><div class="empty">لا توجد جولات</div></div>
+  </div>
+  <div class="bnav-bar">
+    <button class="bnav on" id="bnav-main" onclick="switchTab('scr-main','main')"><span class="bnav-ic">♠</span><span>الصكة</span></button>
+    <button class="bnav" id="bnav-abnat" onclick="switchTab('scr-abnat','abnat')"><span class="bnav-ic">♣</span><span>الأبناط</span></button>
+    <button class="bnav" id="bnav-dag" onclick="switchTab('scr-dag','dag')"><span class="bnav-ic">♥</span><span>دق الولد</span></button>
+  </div>
+</div>
+
+<!-- SCREEN 2: ABNAT -->
+<div class="screen" id="scr-abnat">
+  <div class="topbar">
+    <span class="topbar-title">الأبناط</span>
+    <button class="topbar-btn" onclick="aResetRound()">↺ إعادة</button>
+  </div>
+  <div class="ab-scroll">
+    <div class="sec-lbl">نوع اللعب</div>
+    <div class="tog-row">
+      <button class="tbtn on" onclick="pickType('sun',this)">صن</button>
+      <button class="tbtn" onclick="pickType('hokm',this)">حكم</button>
+    </div>
+    <div class="sec-lbl">المشتري</div>
+    <div class="tog-row" id="buyer-row">
+      <button class="tbtn on" onclick="pickBuyer('na',this)">نحن</button>
+      <button class="tbtn" onclick="pickBuyer('hm',this)">هم</button>
+    </div>
+    <div class="sec-lbl">الأبناط</div>
+    <div class="ab-inp-row">
+      <div class="ab-box focused" id="a-box-na" onclick="aSetFocus('na')">
+        <div class="ab-box-lbl">نحن</div>
+        <div class="ab-box-val" id="a-val-na"><span class="cursor"></span></div>
+      </div>
+      <div class="ab-box" id="a-box-hm" onclick="aSetFocus('hm')">
+        <div class="ab-box-lbl">هم</div>
+        <div class="ab-box-val red" id="a-val-hm"><span style="color:var(--brd)">-</span></div>
+      </div>
+    </div>
+    <div class="info-tiny">المجموع: <span id="abnat-total-lbl">130</span></div>
+    <div class="ab-numpad">
+      <div class="ank" onclick="aKey('1')">1</div><div class="ank" onclick="aKey('2')">2</div><div class="ank" onclick="aKey('3')">3</div>
+      <div class="ank" onclick="aKey('4')">4</div><div class="ank" onclick="aKey('5')">5</div><div class="ank" onclick="aKey('6')">6</div>
+      <div class="ank" onclick="aKey('7')">7</div><div class="ank" onclick="aKey('8')">8</div><div class="ank" onclick="aKey('9')">9</div>
+      <div class="ank wide" onclick="aKey('0')">0</div><div class="ank del" onclick="aKey('⌫')">⌫</div>
+    </div>
+    <div class="sec-lbl">الدبل &nbsp;—&nbsp; المشتري الفعلي: <span id="actual-buyer-lbl">نحن</span></div>
+    <div class="tog-row" id="dabl-row">
+      <button class="tbtn on" onclick="pickDabl(0,this)">لا يوجد</button>
+      <button class="tbtn" onclick="pickDabl(1,this)">دبل</button>
+      <button class="tbtn" onclick="pickDabl(2,this)">ثري</button>
+      <button class="tbtn" onclick="pickDabl(3,this)">فور</button>
+      <button class="tbtn" onclick="pickDabl(4,this)">قهوة</button>
+    </div>
+    <div class="sec-lbl">المشاريع</div>
+    <div class="mash-grid">
+      <div class="mi" id="ab-bloot-na" style="display:none;"><span class="mi-name">بلوت</span><span class="mi-side">نحن</span><div class="ctrs"><button class="cbtn" onclick="chAb('bloot-na',-1)">−</button><span class="cval" id="bloot-na-v">0</span><button class="cbtn" onclick="chAb('bloot-na',1)">+</button></div></div>
+      <div class="mi" id="ab-bloot-hm" style="display:none;"><span class="mi-name">بلوت</span><span class="mi-side">هم</span><div class="ctrs"><button class="cbtn" onclick="chAb('bloot-hm',-1)">−</button><span class="cval" id="bloot-hm-v">0</span><button class="cbtn" onclick="chAb('bloot-hm',1)">+</button></div></div>
+      <div class="mi"><span class="mi-name">سرا</span><span class="mi-side">نحن</span><div class="ctrs"><button class="cbtn" onclick="chAb('sara-na',-1)">−</button><span class="cval" id="sara-na-v">0</span><button class="cbtn" onclick="chAb('sara-na',1)">+</button></div></div>
+      <div class="mi"><span class="mi-name">سرا</span><span class="mi-side">هم</span><div class="ctrs"><button class="cbtn" onclick="chAb('sara-hm',-1)">−</button><span class="cval" id="sara-hm-v">0</span><button class="cbtn" onclick="chAb('sara-hm',1)">+</button></div></div>
+      <div class="mi"><span class="mi-name">خمسين</span><span class="mi-side">نحن</span><div class="ctrs"><button class="cbtn" onclick="chAb('50-na',-1)">−</button><span class="cval" id="50-na-v">0</span><button class="cbtn" onclick="chAb('50-na',1)">+</button></div></div>
+      <div class="mi"><span class="mi-name">خمسين</span><span class="mi-side">هم</span><div class="ctrs"><button class="cbtn" onclick="chAb('50-hm',-1)">−</button><span class="cval" id="50-hm-v">0</span><button class="cbtn" onclick="chAb('50-hm',1)">+</button></div></div>
+      <div class="mi"><span class="mi-name">مية</span><span class="mi-side">نحن</span><div class="ctrs"><button class="cbtn" onclick="chAb('100-na',-1)">−</button><span class="cval" id="100-na-v">0</span><button class="cbtn" onclick="chAb('100-na',1)">+</button></div></div>
+      <div class="mi"><span class="mi-name">مية</span><span class="mi-side">هم</span><div class="ctrs"><button class="cbtn" onclick="chAb('100-hm',-1)">−</button><span class="cval" id="100-hm-v">0</span><button class="cbtn" onclick="chAb('100-hm',1)">+</button></div></div>
+      <div class="mi" id="ab-400-na"><span class="mi-name">أربع مية</span><span class="mi-side">نحن</span><div class="ctrs"><button class="cbtn" onclick="chAb('400-na',-1)">−</button><span class="cval" id="400-na-v">0</span><button class="cbtn" onclick="chAb('400-na',1)">+</button></div></div>
+      <div class="mi" id="ab-400-hm"><span class="mi-name">أربع مية</span><span class="mi-side">هم</span><div class="ctrs"><button class="cbtn" onclick="chAb('400-hm',-1)">−</button><span class="cval" id="400-hm-v">0</span><button class="cbtn" onclick="chAb('400-hm',1)">+</button></div></div>
+    </div>
+    <div class="sec-lbl">النتيجة</div>
+    <div class="res-box">
+      <div class="res-scores">
+        <div class="res-s"><div class="res-l">نحن</div><div class="res-v" id="round-na">-</div></div>
+        <div class="res-s"><div class="res-l">هم</div><div class="res-v red" id="round-hm">-</div></div>
+      </div>
+      <div class="res-status" id="round-status">أدخل البيانات</div>
+    </div>
+    <button class="ab-add" onclick="aAddToSimple()">✓ إضافة للصكة</button>
+    <button class="ab-rst" onclick="aResetRound()">↺ إعادة</button>
+  </div>
+  <div class="bnav-bar">
+    <button class="bnav" id="bnav-main2" onclick="switchTab('scr-main','main')"><span class="bnav-ic">♠</span><span>الصكة</span></button>
+    <button class="bnav on" id="bnav-abnat2" onclick="switchTab('scr-abnat','abnat')"><span class="bnav-ic">♣</span><span>الأبناط</span></button>
+    <button class="bnav" id="bnav-dag2" onclick="switchTab('scr-dag','dag')"><span class="bnav-ic">♥</span><span>دق الولد</span></button>
+  </div>
+</div>
+
+<!-- SCREEN 3: DAG -->
+<div class="screen" id="scr-dag">
+  <div class="topbar"><span class="topbar-title">دق الولد</span></div>
+  <div class="dag-scroll">
+    <div class="name-grid">
+      <input class="name-inp" id="p1" placeholder="اللاعب ١" maxlength="10">
+      <input class="name-inp" id="p2" placeholder="اللاعب ٢" maxlength="10">
+      <input class="name-inp" id="p3" placeholder="اللاعب ٣" maxlength="10">
+      <input class="name-inp" id="p4" placeholder="اللاعب ٤" maxlength="10">
+    </div>
+    <button class="dag-btn" onclick="dagShuffle()">♠ دق الولد</button>
+    <div id="teams-result"></div>
+  </div>
+  <div class="bnav-bar">
+    <button class="bnav" id="bnav-main3" onclick="switchTab('scr-main','main')"><span class="bnav-ic">♠</span><span>الصكة</span></button>
+    <button class="bnav" id="bnav-abnat3" onclick="switchTab('scr-abnat','abnat')"><span class="bnav-ic">♣</span><span>الأبناط</span></button>
+    <button class="bnav on" id="bnav-dag3" onclick="switchTab('scr-dag','dag')"><span class="bnav-ic">♥</span><span>دق الولد</span></button>
+  </div>
+</div>
+
+<!-- WIN -->
+<div class="win-ov" id="win-ov">
+  <div class="win-box">
+    <div class="win-emoji">🏆</div>
+    <div class="win-txt" id="win-txt"></div>
+    <div class="win-sub" id="win-sub"></div>
+  </div>
+  <button class="win-btn" id="win-btn">لعبة جديدة</button>
+</div>
+
+<script>
+// NAV
+function switchTab(id,tab){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  ['main','abnat','dag'].forEach(t=>{
+    ['','2','3'].forEach(s=>{
+      const b=document.getElementById('bnav-'+t+s);
+      if(b)b.classList.toggle('on',t===tab);
+    });
+  });
+  if(id==='scr-abnat')calcAbnat();
+}
+
+// SIMPLE
+let sS={totalNa:0,totalHm:0,history:[]};
+let sInp={na:'',hm:'',focus:'na'};
+function sSetFocus(s){sInp.focus=s;renderS();}
+function renderS(){
+  document.getElementById('sf-na').classList.toggle('focused',sInp.focus==='na');
+  document.getElementById('sf-hm').classList.toggle('focused',sInp.focus==='hm');
+  document.getElementById('sfv-na').innerHTML=sInp.na===''?(sInp.focus==='na'?'<span class="cursor"></span>':'<span style="color:var(--brd)">-</span>'):(sInp.focus==='na'?sInp.na+'<span class="cursor"></span>':sInp.na);
+  document.getElementById('sfv-hm').innerHTML=sInp.hm===''?(sInp.focus==='hm'?'<span class="cursor"></span>':'<span style="color:var(--brd)">-</span>'):(sInp.focus==='hm'?sInp.hm+'<span class="cursor"></span>':sInp.hm);
+}
+function sKey(k){let v=sInp[sInp.focus];if(k==='⌫')v=v.slice(0,-1);else if(v.length<4)v+=k;sInp[sInp.focus]=v;renderS();}
+function sClear(){sInp={na:'',hm:'',focus:'na'};renderS();}
+function sAddRound(){
+  const na=parseInt(sInp.na)||0,hm=parseInt(sInp.hm)||0;
+  if(!na&&!hm){alert('أدخل النتيجة');return;}
+  sS.totalNa+=na;sS.totalHm+=hm;
+  sS.history.push({num:sS.history.length+1,na,hm});
+  renderHist();sClear();checkWin(sS.totalNa,sS.totalHm);
+}
+function sDelRound(i){const r=sS.history[i];sS.totalNa-=r.na;sS.totalHm-=r.hm;sS.history.splice(i,1);sS.history.forEach((h,j)=>h.num=j+1);renderHist();}
+function sResetAll(){if(!confirm('لعبة جديدة؟'))return;sS={totalNa:0,totalHm:0,history:[]};renderHist();}
+function renderHist(){
+  document.getElementById('s-total-na').textContent=sS.totalNa;
+  document.getElementById('s-total-hm').textContent=sS.totalHm;
+  const el=document.getElementById('s-history');
+  if(!sS.history.length){el.innerHTML='<div class="empty">لا توجد جولات</div>';return;}
+  el.innerHTML=sS.history.slice().reverse().map((r,i)=>{
+    const ri=sS.history.length-1-i;
+    return `<div class="hi"><div><div class="hi-num">جولة ${r.num}</div><div class="hi-scores"><span class="hi-na">+${r.na}</span><span style="color:var(--brd)"> | </span><span class="hi-hm">+${r.hm}</span></div></div><button class="hi-del" onclick="sDelRound(${ri})">✕</button></div>`;
+  }).join('');
+}
+
+// SPEAK
+function numToAr(n){
+  const o=['','واحد','اثنان','ثلاثة','أربعة','خمسة','ستة','سبعة','ثمانية','تسعة','عشرة','أحد عشر','اثنا عشر','ثلاثة عشر','أربعة عشر','خمسة عشر','ستة عشر','سبعة عشر','ثمانية عشر','تسعة عشر'];
+  const t=['','','عشرون','ثلاثون','أربعون','خمسون','ستون','سبعون','ثمانون','تسعون'];
+  const h=['','مئة','مئتان','ثلاثمئة','أربعمئة','خمسمئة'];
+  if(n===0)return'صفر';if(n<20)return o[n];
+  if(n<100){const a=Math.floor(n/10),b=n%10;return b?o[b]+' و'+t[a]:t[a];}
+  const c=Math.floor(n/100),d=n%100;return d?h[c]+' و'+numToAr(d):h[c];
+}
+function speakScore(){
+  const u=new SpeechSynthesisUtterance(`لنا ${numToAr(sS.totalNa)}، ولهم ${numToAr(sS.totalHm)}`);
+  u.lang='ar-SA';u.rate=.9;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
+}
+
+// ABNAT
+let aS={type:'sun',dablLevel:0,origBuyer:'na',actualBuyer:'na',
+  ab:{'bloot-na':0,'bloot-hm':0,'sara-na':0,'sara-hm':0,'50-na':0,'50-hm':0,'100-na':0,'100-hm':0,'400-na':0,'400-hm':0}};
+let aN={na:'',hm:'',focus:'na'};
+const TOT={sun:130,hokm:162};
+function aSetFocus(s){aN.focus=s;renderAN();}
+function renderAN(){
+  document.getElementById('a-box-na').classList.toggle('focused',aN.focus==='na');
+  document.getElementById('a-box-hm').classList.toggle('focused',aN.focus==='hm');
+  document.getElementById('a-val-na').innerHTML=aN.na===''?(aN.focus==='na'?'<span class="cursor"></span>':'<span style="color:var(--brd)">-</span>'):(aN.focus==='na'?aN.na+'<span class="cursor"></span>':aN.na);
+  document.getElementById('a-val-hm').innerHTML=aN.hm===''?(aN.focus==='hm'?'<span class="cursor"></span>':'<span style="color:var(--brd)">-</span>'):(aN.focus==='hm'?aN.hm+'<span class="cursor"></span>':aN.hm);
+}
+function aKey(k){
+  let v=aN[aN.focus];
+  if(k==='⌫')v=v.slice(0,-1);else if(v.length<3)v+=k;
+  aN[aN.focus]=v;
+  const val=parseInt(v)||0,total=TOT[aS.type];
+  if(val<=total){const other=aN.focus==='na'?'hm':'na';aN[other]=String(total-val);}
+  renderAN();calcAbnat();
+}
+function abPts(k){if(k.startsWith('bloot'))return aS.type==='hokm'?20:0;if(k.startsWith('sara'))return 20;if(k.startsWith('50'))return 50;if(k.startsWith('100'))return 100;if(k.startsWith('400'))return aS.type==='sun'?200:0;return 0;}
+function abRes(k){if(k.startsWith('bloot'))return aS.type==='hokm'?2:0;if(k.startsWith('sara'))return aS.type==='sun'?4:2;if(k.startsWith('50'))return aS.type==='sun'?10:5;if(k.startsWith('100'))return aS.type==='sun'?20:10;if(k.startsWith('400'))return aS.type==='sun'?40:0;return 0;}
+function pts2res(p){
+  if(aS.type==='sun'){if(p<=4)return 0;const d=Math.floor(p/10),r=p%10;if(r===5)return d*2+1;else if(r===0&&d>0)return d*2;else if(r>0&&r<5)return d*2;else return d*2+2;}
+  else{if(p<=5)return 0;return Math.floor((p-6)/10)+1;}
+}
+function calcAbnat(){
+  const abNa=parseInt(aN.na)||0,abHm=parseInt(aN.hm)||0;
+  let mNaPts=0,mHmPts=0,mNaRes=0,mHmRes=0,bNaR=0,bHmR=0;
+  Object.keys(aS.ab).forEach(k=>{
+    if(aS.ab[k]>0){const pts=abPts(k)*aS.ab[k],res=abRes(k)*aS.ab[k],isNa=k.includes('-na'),isB=k.startsWith('bloot');
+      if(isNa){mNaPts+=pts;if(isB)bNaR+=res;else mNaRes+=res;}else{mHmPts+=pts;if(isB)bHmR+=res;else mHmRes+=res;}}
+  });
+  const tNa=abNa+mNaPts,tHm=abHm+mHmPts,buyer=aS.actualBuyer,base=aS.type==='sun'?26:16;
+  let rNa=0,rHm=0,st='',sc='';
+  if(aN.na===''&&aN.hm===''){document.getElementById('round-status').textContent='أدخل البيانات';document.getElementById('round-status').className='res-status';document.getElementById('round-na').textContent='-';document.getElementById('round-hm').textContent='-';return{rNa:0,rHm:0};}
+  if(aS.dablLevel===4){
+    if(tNa>tHm){rNa=152;st='☕ قهوة — فاز نحن';sc='naj';}
+    else if(tHm>tNa){rHm=152;st='☕ قهوة — فاز هم';sc='naj';}
+    else if(buyer==='na'){rHm=152;st='☕ تعادل — نحن خسرنا';sc='khs';}
+    else{rNa=152;st='☕ تعادل — هم خسروا';sc='khs';}
+  }else if(aS.dablLevel===0){
+    const nW=tNa>tHm,hW=tHm>tNa;
+    if(buyer==='na'){
+      if(nW){rNa=pts2res(abNa)+mNaRes+bNaR;rHm=pts2res(abHm)+mHmRes+bHmR;st='✓ شراءنا ناجحة';sc='naj';}
+      else if(!hW){rNa=pts2res(abNa)+mNaRes+bNaR;rHm=pts2res(abHm)+mHmRes+bHmR;st='= تعادل';sc='';}
+      else{rHm=base+mNaRes+mHmRes+bNaR+bHmR;st='✗ شراءنا خسرانة';sc='khs';}
+    }else{
+      if(hW){rNa=pts2res(abNa)+mNaRes+bNaR;rHm=pts2res(abHm)+mHmRes+bHmR;st='✓ شراء هم ناجحة';sc='naj';}
+      else if(!nW){rNa=pts2res(abNa)+mNaRes+bNaR;rHm=pts2res(abHm)+mHmRes+bHmR;st='= تعادل';sc='';}
+      else{rNa=base+mNaRes+mHmRes+bNaR+bHmR;st='✗ شراء هم خسرانة';sc='khs';}
+    }
+  }else{
+    const mult=aS.dablLevel+1,allM=(mNaRes+mHmRes)*2+(bNaR+bHmR);
+    const w=tNa>tHm?'na':tHm>tNa?'hm':buyer==='na'?'hm':'na';
+    if(w==='na')rNa=base*mult+allM;else rHm=base*mult+allM;
+    const dn=['','دبل','ثري','فور'];st=(w==='na'?'✓ فاز نحن':'✓ فاز هم')+' · '+dn[aS.dablLevel];sc='naj';
+  }
+  document.getElementById('round-na').textContent=rNa;
+  document.getElementById('round-hm').textContent=rHm;
+  document.getElementById('round-status').textContent=st;
+  document.getElementById('round-status').className='res-status '+sc;
+  return{rNa,rHm};
+}
+function pickType(v,btn){
+  aS.type=v;btn.closest('.tog-row').querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  const isSun=v==='sun';
+  document.getElementById('ab-bloot-na').style.display=isSun?'none':'flex';
+  document.getElementById('ab-bloot-hm').style.display=isSun?'none':'flex';
+  document.getElementById('ab-400-na').style.display=isSun?'flex':'none';
+  document.getElementById('ab-400-hm').style.display=isSun?'flex':'none';
+  document.getElementById('abnat-total-lbl').textContent=TOT[v];
+  if(isSun){aS.ab['bloot-na']=0;aS.ab['bloot-hm']=0;}else{aS.ab['400-na']=0;aS.ab['400-hm']=0;}
+  if(aN.na!==''){const val=parseInt(aN.na)||0;aN.hm=String(TOT[v]-val);renderAN();}
+  calcAbnat();
+}
+function pickBuyer(v,btn){aS.origBuyer=v;btn.closest('.tog-row').querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');updateBuyer();calcAbnat();}
+function pickDabl(l,btn){aS.dablLevel=l;btn.closest('.tog-row').querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');updateBuyer();calcAbnat();}
+function updateBuyer(){let b=aS.origBuyer;for(let i=0;i<aS.dablLevel;i++)b=b==='na'?'hm':'na';aS.actualBuyer=b;document.getElementById('actual-buyer-lbl').textContent=b==='na'?'نحن':'هم';}
+function chAb(k,d){aS.ab[k]=Math.max(0,aS.ab[k]+d);document.getElementById(k+'-v').textContent=aS.ab[k];calcAbnat();}
+function aAddToSimple(){
+  const res=calcAbnat();if(!res)return;
+  const{rNa,rHm}=res;
+  if(rNa===0&&rHm===0&&aN.na===''){alert('أدخل البيانات أولاً');return;}
+  sS.totalNa+=rNa;sS.totalHm+=rHm;
+  sS.history.push({num:sS.history.length+1,na:rNa,hm:rHm});
+  renderHist();aResetRound();switchTab('scr-main','main');checkWin(sS.totalNa,sS.totalHm);
+}
+function aResetRound(){
+  aN={na:'',hm:'',focus:'na'};renderAN();aS.dablLevel=0;
+  Object.keys(aS.ab).forEach(k=>{aS.ab[k]=0;const e=document.getElementById(k+'-v');if(e)e.textContent='0';});
+  document.getElementById('dabl-row').querySelectorAll('.tbtn').forEach((b,i)=>b.classList.toggle('on',i===0));
+  updateBuyer();calcAbnat();
+}
+
+// DAG
+function dagShuffle(){
+  const names=[document.getElementById('p1').value.trim()||'اللاعب ١',document.getElementById('p2').value.trim()||'اللاعب ٢',document.getElementById('p3').value.trim()||'اللاعب ٣',document.getElementById('p4').value.trim()||'اللاعب ٤'];
+  for(let i=names.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[names[i],names[j]]=[names[j],names[i]];}
+  document.getElementById('teams-result').innerHTML=`<div class="teams-grid"><div class="team-box"><div class="team-hdr t1">الفريق ١</div><div class="team-members"><div class="member">♠ ${names[0]}</div><div class="member">♣ ${names[1]}</div></div></div><div class="team-box"><div class="team-hdr t2">الفريق ٢</div><div class="team-members"><div class="member">♥ ${names[2]}</div><div class="member">♦ ${names[3]}</div></div></div></div>`;
+}
+
+// WIN
+function checkWin(na,hm){
+  if(na<152&&hm<152)return;
+  const w=na>=hm?'نحن':'هم';
+  document.getElementById('win-txt').textContent=`فاز فريق ${w}`;
+  document.getElementById('win-sub').textContent=`${na} مقابل ${hm}`;
+  document.getElementById('win-btn').onclick=()=>{document.getElementById('win-ov').classList.remove('show');sResetAll();};
+  document.getElementById('win-ov').classList.add('show');
+}
+
+renderS();renderAN();
+</script>
+</body>
+</html>
